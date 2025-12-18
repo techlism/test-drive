@@ -2,9 +2,12 @@
 
 import { User } from "lucia";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search } from "lucide-react";
+import { Search, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 interface DashboardHeaderProps {
   user: User;
@@ -14,6 +17,8 @@ interface DashboardHeaderProps {
 export default function DashboardHeader({ user, onSearch }: DashboardHeaderProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -28,6 +33,28 @@ export default function DashboardHeader({ user, onSearch }: DashboardHeaderProps
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      setIsSigningOut(true);
+      const response = await fetch("/api/sign-out", {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to sign out");
+      }
+
+      toast.success("Signed out successfully");
+      router.push("/");
+      router.refresh();
+    } catch (error) {
+      toast.error("Failed to sign out");
+      console.error(error);
+    } finally {
+      setIsSigningOut(false);
+    }
   };
 
   return (
@@ -49,9 +76,22 @@ export default function DashboardHeader({ user, onSearch }: DashboardHeaderProps
         </div>
 
         <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleSignOut}
+            disabled={isSigningOut}
+            className="text-gray-300 hover:text-white hover:bg-gray-700"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            {isSigningOut ? "Signing out..." : "Sign out"}
+          </Button>
+
           <Avatar className="h-8 w-8">
             <AvatarImage src={user.avatar || ""} alt={user.username} />
-            <AvatarFallback className="bg-drive-blue text-white">{user.username.substring(0, 2).toUpperCase()}</AvatarFallback>
+            <AvatarFallback className="bg-drive-blue text-white">
+              {user.username.substring(0, 2).toUpperCase()}
+            </AvatarFallback>
           </Avatar>
         </div>
       </div>
