@@ -19,6 +19,9 @@ export async function GET(request: NextRequest) {
         const storedState = cookieStore.get("state")?.value;
         const storedCodeVerifier = cookieStore.get("codeVerifier")?.value;
 
+        // Get the origin from the request or environment variable
+        const origin = process.env.NEXT_PUBLIC_BASE_URL || url.origin;
+
         if (
             !code ||
             !state ||
@@ -26,7 +29,7 @@ export async function GET(request: NextRequest) {
             !storedCodeVerifier ||
             state !== storedState
         ) {
-            return NextResponse.redirect(new URL("/sign-in", request.url));
+            return NextResponse.redirect(new URL("/", origin));
         }
 
         const tokens = await google.validateAuthorizationCode(
@@ -73,9 +76,11 @@ export async function GET(request: NextRequest) {
             sessionCookie.attributes,
         );
 
-        return NextResponse.redirect(new URL("/dashboard", request.url));
+        return NextResponse.redirect(new URL("/dashboard", origin));
     } catch (error) {
         console.error(error);
-        return NextResponse.redirect(new URL("/", request.url));
+        const url = new URL(request.url);
+        const origin = process.env.NEXT_PUBLIC_BASE_URL || url.origin;
+        return NextResponse.redirect(new URL("/", origin));
     }
 }
