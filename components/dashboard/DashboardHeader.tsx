@@ -23,7 +23,7 @@ export default function DashboardHeader({ user, onSearch }: DashboardHeaderProps
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchQuery);
-    }, 500);
+    }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
