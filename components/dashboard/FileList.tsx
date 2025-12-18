@@ -17,7 +17,7 @@ export default function FileList({ files, onFileDeleted, onFileRenamed, onRefres
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <FileX className="h-16 w-16 text-gray-400 mb-4" />
         <h3 className="text-lg font-semibold text-white mb-2">No files yet</h3>
-        <p className="text-gray-400">Your query didn't return any files or no files uploaded yet</p>
+        <p className="text-gray-400">Your query didn&apos;t return any files or no files uploaded yet</p>
       </div>
     );
   }
