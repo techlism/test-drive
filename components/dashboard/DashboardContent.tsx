@@ -5,9 +5,9 @@ import { User } from "lucia";
 import DashboardHeader from "./DashboardHeader";
 import FileList from "./FileList";
 import FileUpload from "./FileUpload";
-import Sidebar from "./Sidebar";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export interface FileData {
   id: string;
@@ -17,64 +17,37 @@ export interface FileData {
   createdAt: Date;
 }
 
-interface ApiFileData {
-  id: string;
-  name: string;
-  size: number;
-  mimeType: string;
-  createdAt: number;
-  userId: string;
-  storageKey: string;
-  updatedAt: number;
-}
-
-interface FilesApiResponse {
-  files: ApiFileData[];
-}
-
 interface DashboardContentProps {
   user: User;
+  initialFiles: FileData[];
+  initialSearch: string;
 }
 
-export default function DashboardContent({ user }: DashboardContentProps) {
-  const [files, setFiles] = useState<FileData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+export default function DashboardContent({ user, initialFiles, initialSearch }: DashboardContentProps) {
+  const [files, setFiles] = useState<FileData[]>(initialFiles);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const fetchFiles = async (search?: string) => {
-    try {
-      setLoading(true);
-      const url = search ? `/api/files?search=${encodeURIComponent(search)}` : "/api/files";
-      const response = await fetch(url);
-      if (response.ok) {
-        const data: FilesApiResponse = await response.json();
-        setFiles(data.files.map((f) => ({
-          id: f.id,
-          name: f.name,
-          size: f.size,
-          mimeType: f.mimeType,
-          createdAt: new Date(f.createdAt)
-        })));
-      }
-    } catch (error) {
-      console.error("Failed to fetch files:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Update files when initialFiles changes (after server refresh)
   useEffect(() => {
-    fetchFiles();
-  }, []);
+    setFiles(initialFiles);
+  }, [initialFiles]);
 
   const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    fetchFiles(query);
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (query.trim()) {
+      params.set('search', query);
+    } else {
+      params.delete('search');
+    }
+
+    router.push(`/dashboard?${params.toString()}`);
   };
 
   const handleFileUploaded = () => {
-    fetchFiles(searchQuery);
+    router.refresh();
   };
 
   const handleFileDeleted = (fileId: string) => {
@@ -86,39 +59,34 @@ export default function DashboardContent({ user }: DashboardContentProps) {
   };
 
   const handleRefresh = () => {
-    fetchFiles(searchQuery);
+    router.refresh();
   };
 
   return (
     <div className="min-h-screen bg-drive-dark flex flex-col">
-      <DashboardHeader user={user} onSearch={handleSearch} />
+      <DashboardHeader user={user} onSearch={handleSearch} initialSearch={initialSearch} />
 
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar onNewFile={() => setUploadDialogOpen(true)} />
+      <main className="flex-1 overflow-auto px-4 md:px-8 py-4 md:py-6 pb-24">
+        <div className="mb-4 md:mb-6">
+          <h2 className="text-xl md:text-2xl font-semibold text-white">My Drive</h2>
+        </div>
 
-        <main className="flex-1 overflow-auto px-8 py-6">
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-4">
-              <h2 className="text-2xl font-semibold text-white">My Drive</h2>
-            </div>
-          </div>
+        <FileList
+          files={files}
+          onFileDeleted={handleFileDeleted}
+          onFileRenamed={handleFileRenamed}
+          onRefresh={handleRefresh}
+        />
+      </main>
 
-          {loading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-              {[...Array(12)].map((_, i) => (
-                <Skeleton key={i} className="aspect-square rounded-2xl bg-gray-700" />
-              ))}
-            </div>
-          ) : (
-            <FileList
-              files={files}
-              onFileDeleted={handleFileDeleted}
-              onFileRenamed={handleFileRenamed}
-              onRefresh={handleRefresh}
-            />
-          )}
-        </main>
-      </div>
+      {/* Floating Upload Button */}
+      <Button
+        onClick={() => setUploadDialogOpen(true)}
+        className="fixed bottom-6 right-6 h-14 w-14 md:h-16 md:w-16 rounded-full shadow-lg bg-drive-blue hover:bg-drive-blue-hover z-50"
+        size="icon"
+      >
+        <Plus className="h-6 w-6 md:h-7 md:w-7" />
+      </Button>
 
       <FileUpload
         onFileUploaded={handleFileUploaded}
