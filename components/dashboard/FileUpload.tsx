@@ -157,17 +157,19 @@ export default function FileUpload({ onFileUploaded, open, onOpenChange }: FileU
           </div>
 
           {selectedFile && (
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
               <div className="flex-1 min-w-0">
-                <p className="text-base font-medium text-primary truncate">
+                <p className="text-sm font-medium text-primary text-wrap" title={selectedFile.name}>
                   {selectedFile.name}
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-xs text-gray-500">
                   {formatFileSize(selectedFile.size)}
                 </p>
               </div>
               <Button
                 variant="ghost"
+                size="sm"
+                className="flex-shrink-0"
                 onClick={() => setSelectedFile(null)}
                 disabled={uploading}
               >
